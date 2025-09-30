@@ -1986,18 +1986,12 @@
                     style.id = 'sf-global-error-styles';
                     style.textContent = `
                         .sf-error-message {
-                            background-color: #ffe6f0;
-                            color: #e91e63;
-                            font-size: 0.875em;
-                            padding: 8px 12px;
-                            margin-top: 4px;
+                            background-color: var(--color-form--error-light);
+                            color: rgb(220, 53, 69);
+                            font-size: 0.875rem;
+                            margin-top: 1.5rem;
+                            padding: 0.875rem 1rem;
                             display: block;
-                            border-radius: 4px;
-                            animation: sf-fade-in 0.2s ease-in;
-                        }
-                        @keyframes sf-fade-in {
-                            from { opacity: 0; transform: translateY(-5px); }
-                            to { opacity: 1; transform: translateY(0); }
                         }
                     `;
                     if (!document.getElementById('sf-global-error-styles')) {
