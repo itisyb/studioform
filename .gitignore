@@ -1,9 +1,6 @@
 # Dependencies
 node_modules/
 
-# Build output
-index.min.js
-
 # Environment
 .env
 .env.local
