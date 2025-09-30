@@ -1989,7 +1989,7 @@
                             background-color: var(--color-form--error-light);
                             color: rgb(220, 53, 69);
                             font-size: 0.875rem;
-                            margin-top: 1.5rem;
+                            margin-top: 0.5rem;
                             padding: 0.875rem 1rem;
                             display: block;
                         }
