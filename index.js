@@ -1,4 +1,26 @@
 !(function () {
+    (function() {
+        const style = document.createElement('style');
+        style.id = 'sf-pre-init-styles';
+        style.textContent = `
+            [sf-cloak] > *:not(:first-child),
+            [studio-form-cloak] > *:not(:first-child),
+            [data-sf-cloak] > *:not(:first-child) {
+                display: none !important;
+            }
+            [sf-cloak],
+            [studio-form-cloak],
+            [data-sf-cloak] {
+                visibility: hidden;
+            }
+            [sf-cloak].sf-initialized,
+            [studio-form-cloak].sf-initialized,
+            [data-sf-cloak].sf-initialized {
+                visibility: visible !important;
+            }
+        `;
+        (document.head || document.documentElement).appendChild(style);
+    })();
     let e = "* * * HIDDEN * * *",
         t = "studio-form",
         n = "StudioForm",
@@ -113,6 +135,25 @@
                                 if ("number" === t.type) {
                                     let p = /^-?(\d+|\d{1,3}(,\d{3})*)(\.\d+)?$/;
                                     if (!p.test(n)) return void s.push({ input: t, message: "invalid number", regex: p });
+                                }
+                                if ("url" === t.type) {
+                                    if (n && !n.match(/^https?:\/\//i)) {
+                                        n = 'https://' + n;
+                                        t.value = n;
+                                    }
+                                    if (n) {
+                                        try {
+                                            let url = new URL(n);
+                                            if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+                                                return void s.push({ input: t, message: "invalid url - only HTTP/HTTPS allowed" });
+                                            }
+                                            if (!url.hostname || url.hostname.length < 3 || !url.hostname.includes('.') || url.hostname.endsWith('.')) {
+                                                return void s.push({ input: t, message: "invalid url format" });
+                                            }
+                                        } catch (urlErr) {
+                                            return void s.push({ input: t, message: "invalid url" });
+                                        }
+                                    }
                                 }
                             } else s.push({ input: t, message: a });
                         }),
@@ -1674,6 +1715,15 @@
                         });
                         let y = h[0];
                         p && (y.style.display = ""), y.removeAttribute(m);
+
+                        if (o.hasAttribute('sf-cloak') || o.hasAttribute('studio-form-cloak') || o.hasAttribute('data-sf-cloak')) {
+                            o.classList.add('sf-initialized');
+                            setTimeout(() => {
+                                o.removeAttribute('sf-cloak');
+                                o.removeAttribute('studio-form-cloak');
+                                o.removeAttribute('data-sf-cloak');
+                            }, 50);
+                        }
                         let w = new MutationObserver(S);
                         w.observe(a, { childList: !0, subtree: !0 }), (eo.ghostInstances[c].observer = w);
                         let E = !1;
@@ -1853,7 +1903,7 @@
                                 if (!(e instanceof KeyboardEvent)) return;
                                 let t = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement ? e.target : null;
                                 if (eo.activeKeyBoardInstance !== n.name || !n.config.modes.keyboardEvents || t instanceof HTMLTextAreaElement || n.isDone) return;
-                                let r = ["text", "email", "password", "tel", "number"];
+                                let r = ["text", "email", "password", "tel", "number", "url"];
                                 if ("Backspace" === e.key) {
                                     if (r.includes(t?.type || "")) return;
                                     er(n, {}, !0), n.focus.clear();
