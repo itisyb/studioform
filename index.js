@@ -106,8 +106,9 @@
                                 if (t.tagName === 'TEXTAREA') {
                                     let rtfEditor = t.closest('.form-field-wrapper, .form_component')?.querySelector('[data-tiny-editor]');
                                     if (rtfEditor) {
-                                        let editorContent = rtfEditor.innerHTML.replace(/<[^>]*>/g, '').trim();
-                                        if (!editorContent) {
+                                        let editorContent = rtfEditor.textContent || rtfEditor.innerText || '';
+                                        editorContent = editorContent.replace(/[\n\r\s]/g, '').trim();
+                                        if (!editorContent || editorContent === '') {
                                             return void s.push({ input: t, message: "This field is required", rtfEditor: rtfEditor });
                                         }
                                     } else {
