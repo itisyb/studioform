@@ -1985,29 +1985,16 @@
                     const style = document.createElement('style');
                     style.id = 'sf-global-error-styles';
                     style.textContent = `
-                        .sf-error-indicator {
-                            border: 2px solid #dc3545 !important;
-                            animation: sf-shake 0.3s ease-in-out;
-                        }
                         .sf-error-message {
-                            color: #dc3545;
+                            color: #ff69b4;
                             font-size: 0.875em;
                             margin-top: 4px;
                             display: block;
                             animation: sf-fade-in 0.2s ease-in;
                         }
-                        @keyframes sf-shake {
-                            0%, 100% { transform: translateX(0); }
-                            25% { transform: translateX(-5px); }
-                            75% { transform: translateX(5px); }
-                        }
                         @keyframes sf-fade-in {
                             from { opacity: 0; transform: translateY(-5px); }
                             to { opacity: 1; transform: translateY(0); }
-                        }
-                        [data-tiny-editor].sf-error-indicator {
-                            border: 2px solid #dc3545 !important;
-                            border-radius: 4px;
                         }
                     `;
                     if (!document.getElementById('sf-global-error-styles')) {
@@ -2016,12 +2003,49 @@
 
                     const originalReportValidity = HTMLFormElement.prototype.reportValidity;
 
+                    function clearFieldError(input) {
+                        const wrapper = input.closest('.form-field-wrapper, .form_component') || input.parentElement;
+                        const errorMsg = wrapper?.querySelector('.sf-error-message');
+                        if (errorMsg) {
+                            errorMsg.remove();
+                        }
+                    }
+
+                    document.addEventListener('input', function(e) {
+                        if (e.target.matches('input, textarea, select')) {
+                            clearFieldError(e.target);
+                        }
+                    }, true);
+
+                    document.addEventListener('change', function(e) {
+                        if (e.target.matches('input[type="file"], input[type="checkbox"], input[type="radio"]')) {
+                            clearFieldError(e.target);
+                        }
+                    }, true);
+
+                    const observer = new MutationObserver(function(mutations) {
+                        mutations.forEach(function(mutation) {
+                            mutation.addedNodes.forEach(function(node) {
+                                if (node.nodeType === 1 && node.matches('[data-tiny-editor]')) {
+                                    const textarea = node.closest('.form-field-wrapper, .form_component')?.querySelector('textarea');
+                                    if (textarea) {
+                                        node.addEventListener('input', function() {
+                                            clearFieldError(textarea);
+                                        });
+                                    }
+                                }
+                            });
+                        });
+                    });
+
+                    observer.observe(document.body, {
+                        childList: true,
+                        subtree: true
+                    });
+
                     document.addEventListener('sf-report-validity', function(e) {
                         const validity = e.detail?.validity || [];
 
-                        document.querySelectorAll('.sf-error-indicator').forEach(el => {
-                            el.classList.remove('sf-error-indicator');
-                        });
                         document.querySelectorAll('.sf-error-message').forEach(el => el.remove());
 
                         validity.forEach(item => {
@@ -2030,18 +2054,14 @@
                             const label = item.label;
                             const rtfEditor = item.rtfEditor;
 
-                            let targetElement = input;
                             let errorContainer = input.parentElement;
 
                             if (input.type === 'file' && label) {
-                                targetElement = label.closest('.button, [role="button"], a') || label;
+                                const targetElement = label.closest('.button, [role="button"], a') || label;
                                 errorContainer = targetElement.parentElement;
                             } else if (rtfEditor) {
-                                targetElement = rtfEditor;
                                 errorContainer = rtfEditor.parentElement || rtfEditor.closest('.form-field-wrapper, .form_component');
                             }
-
-                            targetElement.classList.add('sf-error-indicator');
 
                             const existingError = errorContainer?.querySelector('.sf-error-message');
                             if (!existingError) {
@@ -2057,7 +2077,7 @@
                             }
 
                             setTimeout(() => {
-                                targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                input.scrollIntoView({ behavior: 'smooth', block: 'center' });
                                 if (input.type !== 'file' && !rtfEditor) {
                                     input.focus();
                                 }

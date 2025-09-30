@@ -62,7 +62,9 @@ index.min.js →   46 KB  (minified, 54% smaller)
 - **Dead code elimination**: ✅
 - **Variable mangling**: ✅
 - **Whitespace removal**: ✅
-- **Comment removal**: ✅
+- **Comment removal**: ✅ (with validation)
+- **External service comment stripping**: ✅
+- **Comment validation**: ✅ (auto-detects unwanted comments)
 - **Multi-pass optimization**: ✅ (2 passes)
 
 ---
@@ -218,6 +220,34 @@ pkill -f chokidar
 # Restart watch
 bun run build:watch
 ```
+
+---
+
+### Unwanted Comments in Minified File
+
+**Issue**: External service comments (jsDelivr, unpkg, etc.) appear in `index.min.js`
+
+**Fix**: The build system automatically strips these comments!
+
+The enhanced build script:
+- ✅ Removes jsDelivr comments
+- ✅ Removes "Original file:" references
+- ✅ Removes "Do NOT use SRI" warnings
+- ✅ Removes unpkg references
+- ✅ Validates only your custom preamble remains
+
+**Validation**:
+```bash
+# Build with verbose output
+bun run build:verbose
+
+# Look for: "🔒 Comment validation: PASSED ✓"
+```
+
+**If validation fails**:
+1. Check for external minification tools
+2. Ensure you're using `bun run build` (not external CDN)
+3. Rebuild: `bun run build:clean`
 
 ---
 
