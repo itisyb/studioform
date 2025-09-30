@@ -1986,10 +1986,13 @@
                     style.id = 'sf-global-error-styles';
                     style.textContent = `
                         .sf-error-message {
-                            color: #ff69b4;
+                            background-color: #ffe6f0;
+                            color: #e91e63;
                             font-size: 0.875em;
+                            padding: 8px 12px;
                             margin-top: 4px;
                             display: block;
+                            border-radius: 4px;
                             animation: sf-fade-in 0.2s ease-in;
                         }
                         @keyframes sf-fade-in {
@@ -2000,8 +2003,6 @@
                     if (!document.getElementById('sf-global-error-styles')) {
                         document.head.appendChild(style);
                     }
-
-                    const originalReportValidity = HTMLFormElement.prototype.reportValidity;
 
                     function clearFieldError(input) {
                         const wrapper = input.closest('.form-field-wrapper, .form_component') || input.parentElement;
@@ -2065,9 +2066,12 @@
 
                             const existingError = errorContainer?.querySelector('.sf-error-message');
                             if (!existingError) {
-                                const errorMsg = document.createElement('span');
+                                const errorMsg = document.createElement('div');
                                 errorMsg.className = 'sf-error-message';
                                 errorMsg.textContent = message === 'empty' ? 'This field is required' :
+                                                      message === 'invalid email' ? 'Please enter a valid email address' :
+                                                      message === 'invalid tel' ? 'Please enter a valid phone number' :
+                                                      message === 'invalid url' ? 'Please enter a valid URL' :
                                                       message === 'no files' ? 'Please select a file' :
                                                       message === 'no attachments' ? 'Please upload a file' : message;
 
