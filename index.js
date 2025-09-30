@@ -89,11 +89,34 @@
                         c.forEach((t) => {
                             if ("radio" === t.type || !t.hasAttribute("required")) return;
                             let n = t.value.trim();
-                            if ("file" == t.type)
-                                return void (document.querySelector(`[for="${t.id}"]`) && !t.classList.contains(r)
-                                    ? t.hasAttribute("sf-attached") || s.push({ input: t, message: "no attachments" })
-                                    : n || s.push({ input: t, message: "no files" }));
-                            if (!n) return void s.push({ input: t, message: "empty" });
+                            if ("file" == t.type) {
+                                let fileLabel = document.querySelector(`[for="${t.id}"]`);
+                                let hasAttachment = t.hasAttribute("sf-attached");
+                                let hasValue = n || t.files?.length > 0;
+                                if (fileLabel && !t.classList.contains(r)) {
+                                    if (!hasAttachment) {
+                                        s.push({ input: t, message: "Please upload a file", label: fileLabel });
+                                    }
+                                } else if (!hasValue) {
+                                    s.push({ input: t, message: "Please select a file", label: fileLabel });
+                                }
+                                return;
+                            }
+                            if (!n) {
+                                if (t.tagName === 'TEXTAREA') {
+                                    let rtfEditor = t.closest('.form-field-wrapper, .form_component')?.querySelector('[data-tiny-editor]');
+                                    if (rtfEditor) {
+                                        let editorContent = rtfEditor.innerHTML.replace(/<[^>]*>/g, '').trim();
+                                        if (!editorContent) {
+                                            return void s.push({ input: t, message: "This field is required", rtfEditor: rtfEditor });
+                                        }
+                                    } else {
+                                        return void s.push({ input: t, message: "This field is required" });
+                                    }
+                                } else {
+                                    return void s.push({ input: t, message: "empty" });
+                                }
+                            }
                             if ("number" === t.type) {
                                 let o = (function (e) {
                                     let t = parseFloat(e.value),
@@ -1417,6 +1440,13 @@
                             }
                             if ((s(t, "check-requirements", n, !1), c(t))) return !0;
                             if (s(t, "report-validity", n, !0).defaultPrevented) return !1;
+
+                            const validityEvent = new CustomEvent('sf-report-validity', {
+                                bubbles: true,
+                                detail: { validity: t.data.validity }
+                            });
+                            document.dispatchEvent(validityEvent);
+
                             return o(t.data.validity.map((e) => e.input)), !1;
                             async function o(e) {
                                 if (e.length < 1) return;
@@ -1920,6 +1950,141 @@
                     });
             }
         ),
+            (function() {
+                function initFileUploadAccessibility() {
+                    document.querySelectorAll('input[type="file"]').forEach(fileInput => {
+                        const uploadLabel = document.querySelector(`label[for="${fileInput.id}"]`);
+                        const uploadButton = uploadLabel?.closest('.button, [role="button"], a');
+
+                        if (uploadButton && !uploadButton.hasAttribute('data-kb-init')) {
+                            uploadButton.setAttribute('data-kb-init', 'true');
+                            uploadButton.setAttribute('tabindex', '0');
+                            uploadButton.setAttribute('role', 'button');
+
+                            uploadButton.addEventListener('keydown', function(e) {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    fileInput.click();
+                                }
+                            });
+
+                            uploadButton.addEventListener('focus', function() {
+                                this.style.outline = '2px solid #4299e1';
+                                this.style.outlineOffset = '2px';
+                            });
+
+                            uploadButton.addEventListener('blur', function() {
+                                this.style.outline = '';
+                                this.style.outlineOffset = '';
+                            });
+                        }
+                    });
+                }
+
+                function initGlobalErrorDisplay() {
+                    const style = document.createElement('style');
+                    style.id = 'sf-global-error-styles';
+                    style.textContent = `
+                        .sf-error-indicator {
+                            border: 2px solid #dc3545 !important;
+                            animation: sf-shake 0.3s ease-in-out;
+                        }
+                        .sf-error-message {
+                            color: #dc3545;
+                            font-size: 0.875em;
+                            margin-top: 4px;
+                            display: block;
+                            animation: sf-fade-in 0.2s ease-in;
+                        }
+                        @keyframes sf-shake {
+                            0%, 100% { transform: translateX(0); }
+                            25% { transform: translateX(-5px); }
+                            75% { transform: translateX(5px); }
+                        }
+                        @keyframes sf-fade-in {
+                            from { opacity: 0; transform: translateY(-5px); }
+                            to { opacity: 1; transform: translateY(0); }
+                        }
+                        [data-tiny-editor].sf-error-indicator {
+                            border: 2px solid #dc3545 !important;
+                            border-radius: 4px;
+                        }
+                    `;
+                    if (!document.getElementById('sf-global-error-styles')) {
+                        document.head.appendChild(style);
+                    }
+
+                    const originalReportValidity = HTMLFormElement.prototype.reportValidity;
+
+                    document.addEventListener('sf-report-validity', function(e) {
+                        const validity = e.detail?.validity || [];
+
+                        document.querySelectorAll('.sf-error-indicator').forEach(el => {
+                            el.classList.remove('sf-error-indicator');
+                        });
+                        document.querySelectorAll('.sf-error-message').forEach(el => el.remove());
+
+                        validity.forEach(item => {
+                            const input = item.input;
+                            const message = item.message;
+                            const label = item.label;
+                            const rtfEditor = item.rtfEditor;
+
+                            let targetElement = input;
+                            let errorContainer = input.parentElement;
+
+                            if (input.type === 'file' && label) {
+                                targetElement = label.closest('.button, [role="button"], a') || label;
+                                errorContainer = targetElement.parentElement;
+                            } else if (rtfEditor) {
+                                targetElement = rtfEditor;
+                                errorContainer = rtfEditor.parentElement || rtfEditor.closest('.form-field-wrapper, .form_component');
+                            }
+
+                            targetElement.classList.add('sf-error-indicator');
+
+                            const existingError = errorContainer?.querySelector('.sf-error-message');
+                            if (!existingError) {
+                                const errorMsg = document.createElement('span');
+                                errorMsg.className = 'sf-error-message';
+                                errorMsg.textContent = message === 'empty' ? 'This field is required' :
+                                                      message === 'no files' ? 'Please select a file' :
+                                                      message === 'no attachments' ? 'Please upload a file' : message;
+
+                                if (errorContainer) {
+                                    errorContainer.appendChild(errorMsg);
+                                }
+                            }
+
+                            setTimeout(() => {
+                                targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                if (input.type !== 'file' && !rtfEditor) {
+                                    input.focus();
+                                }
+                            }, 100);
+                        });
+                    });
+                }
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', function() {
+                        initFileUploadAccessibility();
+                        initGlobalErrorDisplay();
+                    });
+                } else {
+                    initFileUploadAccessibility();
+                    initGlobalErrorDisplay();
+                }
+
+                const observer = new MutationObserver(function() {
+                    initFileUploadAccessibility();
+                });
+
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true
+                });
+            })(),
             (e = eo.proxy),
             (window[n] = e),
             document.querySelectorAll(["sf", t].map((e) => `[${e}-cloak]`).join()).forEach((e) => {
