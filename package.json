@@ -1,0 +1,26 @@
+{
+  "name": "studioform-custom",
+  "version": "1.0.0",
+  "description": "Custom StudioForm fork with enhanced validation and accessibility",
+  "main": "index.js",
+  "scripts": {
+    "build": "terser index.js -o index.min.js -c -m --comments false",
+    "build:watch": "chokidar 'index.js' -c 'npm run build'",
+    "build:verbose": "node build.js",
+    "minify": "npm run build",
+    "prepare": "husky install || true"
+  },
+  "devDependencies": {
+    "terser": "^5.31.0",
+    "chokidar-cli": "^3.0.0",
+    "husky": "^8.0.0"
+  },
+  "keywords": [
+    "studioform",
+    "forms",
+    "validation",
+    "accessibility"
+  ],
+  "author": "Future You",
+  "license": "Private"
+}

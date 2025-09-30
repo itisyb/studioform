@@ -1,0 +1,10 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Check if index.js was modified
+if git diff --cached --name-only | grep -q "index.js"; then
+  echo "🔧 index.js modified, rebuilding minified version..."
+  bun run build
+  git add index.min.js
+  echo "✅ index.min.js updated and staged"
+fi

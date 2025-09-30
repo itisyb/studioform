@@ -14,13 +14,78 @@ This is a forked version of StudioForm that includes several custom enhancements
 
 ## 📦 Installation
 
-Simply include the custom `index.js` file in your project:
+### For Production (Recommended)
+
+Use the minified version for better performance:
+
+```html
+<script src="path/to/studioform/index.min.js"></script>
+```
+
+### For Development
+
+Use the full version with readable code:
 
 ```html
 <script src="path/to/studioform/index.js"></script>
 ```
 
 No additional dependencies required (GSAP is auto-loaded if not present).
+
+---
+
+## 🔨 Building
+
+### Quick Build
+
+Generate the minified version:
+
+```bash
+bun run build
+```
+
+### Watch Mode
+
+Auto-rebuild on file changes:
+
+```bash
+bun run build:watch
+```
+
+### Verbose Build
+
+See detailed build statistics:
+
+```bash
+bun run build:verbose
+```
+
+### Build Output
+
+- **Original**: `index.js` (~100 KB)
+- **Minified**: `index.min.js` (~46 KB)
+- **Size Reduction**: ~54%
+
+### Automatic Building
+
+The minified version is automatically built:
+
+1. **On Git Commit** - Pre-commit hook rebuilds if `index.js` changed
+2. **On GitHub Push** - GitHub Actions workflow rebuilds on push
+3. **Manual Build** - Run `bun run build` anytime
+
+### First-Time Setup
+
+```bash
+# Install dependencies
+bun install
+
+# Build minified version
+bun run build
+
+# (Optional) Setup git hooks
+bun run prepare
+```
 
 ## 🚀 Features
 
