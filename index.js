@@ -102,21 +102,34 @@
                                 }
                                 return;
                             }
-                            if (!n) {
-                                if (t.tagName === 'TEXTAREA') {
-                                    let rtfEditor = t.closest('.form-field-wrapper, .form_component')?.querySelector('[data-tiny-editor]');
-                                    if (rtfEditor) {
-                                        let editorContent = rtfEditor.textContent || rtfEditor.innerText || '';
-                                        editorContent = editorContent.replace(/[\n\r\s]/g, '').trim();
-                                        if (!editorContent || editorContent === '') {
-                                            return void s.push({ input: t, message: "This field is required", rtfEditor: rtfEditor });
-                                        }
-                                    } else {
-                                        return void s.push({ input: t, message: "This field is required" });
+
+                            if (t.tagName === 'TEXTAREA') {
+                                let wrapper = t.parentElement;
+                                let rtfEditor = wrapper?.querySelector('[data-tiny-editor]');
+
+                                if (!rtfEditor && wrapper) {
+                                    let editorWrapper = wrapper.querySelector('.wysiwyg_editor, [id*="wysiwyg"], [class*="editor"]');
+                                    if (editorWrapper) {
+                                        rtfEditor = editorWrapper.querySelector('[data-tiny-editor]');
+                                    }
+                                }
+
+                                if (rtfEditor) {
+                                    let editorContent = rtfEditor.textContent || rtfEditor.innerText || '';
+                                    editorContent = editorContent.replace(/[\n\r\s]/g, '').trim();
+                                    if (!editorContent || editorContent === '') {
+                                        return void s.push({ input: t, message: "This field is required", rtfEditor: rtfEditor });
                                     }
                                 } else {
-                                    return void s.push({ input: t, message: "empty" });
+                                    if (!n) {
+                                        return void s.push({ input: t, message: "This field is required" });
+                                    }
                                 }
+                                return;
+                            }
+
+                            if (!n) {
+                                return void s.push({ input: t, message: "empty" });
                             }
                             if ("number" === t.type) {
                                 let o = (function (e) {
@@ -2000,7 +2013,7 @@
                     }
 
                     function clearFieldError(input) {
-                        const wrapper = input.closest('.form-field-wrapper, .form_component') || input.parentElement;
+                        const wrapper = input.parentElement;
                         const errorMsg = wrapper?.querySelector('.sf-error-message');
                         if (errorMsg) {
                             errorMsg.remove();
@@ -2023,7 +2036,7 @@
                         mutations.forEach(function(mutation) {
                             mutation.addedNodes.forEach(function(node) {
                                 if (node.nodeType === 1 && node.matches('[data-tiny-editor]')) {
-                                    const textarea = node.closest('.form-field-wrapper, .form_component')?.querySelector('textarea');
+                                    const textarea = node.parentElement?.querySelector('textarea');
                                     if (textarea) {
                                         node.addEventListener('input', function() {
                                             clearFieldError(textarea);
@@ -2056,7 +2069,7 @@
                                 const targetElement = label.closest('.button, [role="button"], a') || label;
                                 errorContainer = targetElement.parentElement;
                             } else if (rtfEditor) {
-                                errorContainer = rtfEditor.parentElement || rtfEditor.closest('.form-field-wrapper, .form_component');
+                                errorContainer = input.parentElement;
                             }
 
                             const existingError = errorContainer?.querySelector('.sf-error-message');
