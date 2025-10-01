@@ -85,9 +85,35 @@
                 if ("radio" === o.type) return n();
                 if ("standard" === o.type) {
                     let c = a.querySelectorAll(w);
-                    t && (c = t),
-                        c.forEach((t) => {
-                            if ("radio" === t.type || !t.hasAttribute("required")) return;
+                    t && (c = t);
+
+                    // Handle checkbox groups separately
+                    let checkboxGroups = {};
+                    c.forEach((input) => {
+                        if (input.type === 'checkbox' && input.hasAttribute('required')) {
+                            const name = input.name || input.id || 'default';
+                            if (!checkboxGroups[name]) {
+                                checkboxGroups[name] = [];
+                            }
+                            checkboxGroups[name].push(input);
+                        }
+                    });
+
+                    // Validate checkbox groups
+                    Object.keys(checkboxGroups).forEach((groupName) => {
+                        const checkboxes = checkboxGroups[groupName];
+                        const hasChecked = checkboxes.some(cb => cb.checked);
+
+                        if (!hasChecked) {
+                            checkboxes.forEach(cb => {
+                                l.push({ input: cb, message: "Please select at least one option" });
+                            });
+                        }
+                    });
+
+                    c.forEach((t) => {
+                        if ("radio" === t.type || !t.hasAttribute("required")) return;
+                        if ("checkbox" === t.type) return; // Skip individual checkbox validation, handled above
                             let n = t.value.trim();
                             if ("file" == t.type) {
                                 let fileLabel = document.querySelector(`[for="${t.id}"]`);
@@ -2081,7 +2107,8 @@
                                                       message === 'invalid tel' ? 'Please enter a valid phone number' :
                                                       message === 'invalid url' ? 'Please enter a valid URL' :
                                                       message === 'no files' ? 'Please select a file' :
-                                                      message === 'no attachments' ? 'Please upload a file' : message;
+                                                      message === 'no attachments' ? 'Please upload a file' :
+                                                      message === 'unchecked' ? 'Please select at least one option' : message;
 
                                 if (errorContainer) {
                                     errorContainer.appendChild(errorMsg);
@@ -2095,6 +2122,36 @@
                                 }
                             }, 100);
                         });
+                    });
+
+                    // Clear errors when checkboxes or radios are checked
+                    document.addEventListener('change', function(e) {
+                        if (e.target.matches('input[type="checkbox"], input[type="radio"]')) {
+                            const input = e.target;
+                            const name = input.name || input.id;
+
+                            // Find all inputs with the same name (same group)
+                            let groupInputs = [];
+                            if (name) {
+                                groupInputs = Array.from(document.querySelectorAll(`input[name="${name}"]`));
+                            } else {
+                                groupInputs = [input];
+                            }
+
+                            // Check if at least one is checked in the group
+                            const hasChecked = groupInputs.some(inp => inp.checked);
+
+                            if (hasChecked) {
+                                // Remove errors from all inputs in the group
+                                groupInputs.forEach(inp => {
+                                    const errorContainer = inp.parentElement;
+                                    const errorMsg = errorContainer?.querySelector('.sf-error-message');
+                                    if (errorMsg) {
+                                        errorMsg.remove();
+                                    }
+                                });
+                            }
+                        }
                     });
                 }
 
